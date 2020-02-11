@@ -20,7 +20,9 @@ interface File {
 interface AddFileStatus {
     fileId: string,
     rowsProcessed: number,
-    totalRows: number
+    totalRows: number,
+    chunkSize: number,
+    chunkDuration: number
 }
 
 interface CsvRow {
@@ -96,7 +98,7 @@ export default class App {
     }
 
     // @TODO handle number columns
-    // @TODO sanitise column names
+    // @TODO handle max sql variables error
     async addSingleFile(file: File, callback: AddFileCallback) {
         const lineCount = await countLines(file.path);
         let rowsProcessed = 0;
@@ -104,10 +106,15 @@ export default class App {
         callback(null, {
             fileId: file.id,
             rowsProcessed,
-            totalRows: lineCount
+            totalRows: lineCount,
+            chunkDuration: 0,
+            chunkSize: 0
         });
 
-        let preparedStatement: Database.Statement | undefined;
+        let preparedStatement: {
+            statement: Database.Statement,
+            rowCount: number
+        } | undefined;
         let tableCreated = false;
         let columns: {safeName: string, originalName: string}[] | undefined;
 
@@ -118,8 +125,9 @@ export default class App {
             fs.createReadStream(file.path)
                 .pipe(csv())
         )
-        .batch(500)
+        .batch(50)
         .each((rows: CsvRow[]) => {
+            const start = Date.now();
 
             if(rows.length === 0) return;
 
@@ -146,24 +154,33 @@ export default class App {
             }
 
             // Set up prepared statement for fast insert
-            if(!preparedStatement) {
-
-                preparedStatement = this.dataDbWriter.prepare(`
-                    INSERT INTO ${tableName} (${columns.map(col => col.safeName).join(', ')})
-                    VALUES (${columns.map(col => `@${col.safeName}`).join(', ')})
-                `);
+            if(!preparedStatement || preparedStatement.rowCount != rows.length) {
+                preparedStatement = {
+                    statement: this.dataDbWriter.prepare(`
+                        INSERT INTO ${tableName} (${columns.map(col => col.safeName).join(', ')})
+                        VALUES ${new Array(rows.length).fill(`(${new Array(columns.length).fill('?').join(', ')})`).join(', ')}
+                    `),
+                    rowCount: rows.length
+                };
             }
 
-            for (const row of rows) preparedStatement.run(columns.reduce((rr, col) => ({
-                ...rr,
-                [col.safeName]: row[col.originalName]
-            }), {}));
+            let values = [];
+            for (const row of rows) {
+                for(const column of columns) {
+                    values.push(row[column.originalName]);
+                }
+            }
+
+            preparedStatement.statement.run(values);
+
 
             rowsProcessed += rows.length;
 
             callback(null, {
                 fileId: file.id,
                 rowsProcessed,
+                chunkSize: rows.length,
+                chunkDuration: Date.now() - start,
                 totalRows: lineCount
             });
 
