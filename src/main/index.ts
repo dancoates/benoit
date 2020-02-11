@@ -1,5 +1,6 @@
 import electron from 'electron';
-import { format as formatUrl } from 'url'
+import {format as formatUrl} from 'url'
+import {ipcMain} from 'electron';
 import path from 'path'
 import App from './App';
 
@@ -42,15 +43,23 @@ const createWindow = () => {
     });
 };
 
-// const bindEvents = (app: App) => {
+const bindEvents = (app: App) => {
+    ipcMain.handle('tabList', (event) => {
+        return app.tabList();
+    });
 
-// }
+    ipcMain.on('addFiles', (event, arg) => {
+        const {files} = arg;
+        app.addFiles(files, (err, status) => {
+            event.reply('addFilesProgress', status);
+        });
+    });
+};
 
 electron.app.on('ready', () => {
     createWindow();
     const app = new App();
-    console.log(app);
-    // bindEvents(app);
+    bindEvents(app);
 });
 
 electron.app.on('window-all-closed', () => {
