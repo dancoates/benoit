@@ -20,7 +20,7 @@ const createWindow = () => {
     });
 
 
-    if (isDevelopment) {
+    if (isDevelopment || true) {
       mainWindow.webContents.openDevTools()
     }
 
