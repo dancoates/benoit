@@ -5,8 +5,14 @@ import composeWith from 'unmutable/composeWith';
 import React from 'react';
 import QueryView from './QueryView';
 
+const Provider = Api.Provider;
+
+const ProviderHoc = () => (Component) => ({initialState, ...rest}) => <Provider initialState={initialState} debug={true}>
+    <Component {...rest} />
+</Provider>;
+
 export default composeWith(
-    Api.ProviderHoc(),
+    ProviderHoc(),
     () => {
         return <QueryView/>;
     }

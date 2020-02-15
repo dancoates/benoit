@@ -23,6 +23,7 @@ const requestFile = () => {
 
     return new Observable((subscriber) => {
         (async () => {
+            let completeFiles = 0;
             const openResult = await dialog.showOpenDialog({
                 filters: [{name: 'csv', extensions: ['csv']}],
                 properties: ['openFile', 'multiSelections']
@@ -68,8 +69,12 @@ const requestFile = () => {
                             tableId: addFileStatus.tableId
                         }
                     });
-
+                    if(addFileStatus.status === 'COMPLETE') completeFiles += 1;
                     subscriber.next({status})
+
+                    if(completeFiles === files.length) {
+                        subscriber.complete();
+                    }
                 }
             });
 

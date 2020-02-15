@@ -13,8 +13,6 @@ const Loader: FunctionComponent<Props> = (props) => {
         message={message}
         children={children}
     />;
-
-
 };
 
 export default Loader;

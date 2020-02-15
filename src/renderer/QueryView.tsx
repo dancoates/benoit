@@ -10,12 +10,19 @@ import Loader from './components/Loader';
 import Tabs from './layout/Tabs';
 import Sidebar from './layout/Sidebar';
 import styled from 'styled-components';
+import pipeWith from 'unmutable/pipeWith';
+import sortBy from 'unmutable/sortBy';
+import get from 'unmutable/get';
+import map from 'unmutable/map';
+import concat from 'unmutable/concat';
+import pipe from 'unmutable/pipe';
 
 export default function() {
     const appStateMessage = Api.appState.useRequest();
     const addFileMessage = Api.addFile.useRequest();
+    // const updateActiveViewMessage = Api.updateActiveView.useRequest();
 
-    useAutoRequest(() => appStateMessage.onRequest());
+    useAutoRequest(() => appStateMessage.onRequest({foo: 'asddfasdfsadsasdfas'}));
 
     const [activeTabId, setActiveTab] = useState<string | null>(null);
 
@@ -27,19 +34,52 @@ export default function() {
         height: 100%;
     `;
 
-    // @TODO not sure why this works?
-    const handleNewFile = async () => {
-        await addFileMessage.onRequest();
-        console.log('request app state update');
-        await appStateMessage.onRequest();
+    // @TODO add new files to file list, ensure that there's enough data to include them
+    const handleNewFile = () => {
+        addFileMessage.onRequest({foo: 'adfsadfsadfsafadfs'});
     };
+
+    // @TODO work out how to update app state when active view changes?
+    const updateActiveView = async (tableId, tabId) => {
+        // await updateActiveViewMessage.onRequest({tableId, tabId});
+    };
+
 
     return <Loader
         message={appStateMessage}
     >{(data) => {
+        console.log(data);
         const tabId = activeTabId || data.tabList[0].id;
         const activeTab = data.tabList.find(tab => tab.id === tabId);
         const tableList = data.dataTableList;
+
+        const loadingTables = addFileMessage.requestState
+            .emptyMap(() => [])
+            .fetchingMap(() => [])
+            .successMap(() => {
+                const status = addFileMessage.get('status');
+
+                console.log('STATUS', status);
+
+                return status.map((ii) => ({
+                    id: ii.fileId,
+                    name: ii.tableName,
+                    fileName: ii.path,
+                    status: ii.status,
+                    progress: (ii.processedSize / ii.totalSize) * 100
+                }));
+            }).value();
+
+        const mergedTables = pipeWith(
+            tableList,
+            map(ii => ({
+                ...ii,
+                status: 'COMPLETE',
+                progress: 100
+            })),
+            concat(loadingTables),
+            sortBy(pipe(get('name'), (name: string) => name.toLowerCase()))
+        );
 
         return <Page>
             <Tabs
@@ -48,14 +88,15 @@ export default function() {
                 onSelectTab={(id) => setActiveTab(id)}
             />
             <VerticalSplit
-                minSize={50}
+                minSize={200}
                 maxSize={300}
-                defaultSize={100}
+                defaultSize={200}
             >
                 <Sidebar
-                    tableList={tableList}
+                    tableList={mergedTables}
                     activeView={activeTab.activeView}
                     onAddNewFile={() => handleNewFile()}
+                    onSelectTable={(tableId) => updateActiveView(tableId, tabId)}
                 />
                 <HorizontalSplit>
                     <div>Item 2</div>

@@ -21,7 +21,7 @@ const createWindow = () => {
     });
 
 
-    if (isDevelopment || true) {
+    if (isDevelopment) {
       mainWindow.webContents.openDevTools()
     }
 
@@ -45,11 +45,13 @@ const createWindow = () => {
 
 const bindEvents = (app: App) => {
     ipcMain.handle('tabList', (event) => {
+        console.log('request tab list');
         return app.tabList();
     });
 
 
     ipcMain.handle('tableList', (event) => {
+        console.log('tableList');
         return app.tableList();
     });
 
