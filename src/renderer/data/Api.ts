@@ -7,6 +7,18 @@ import {Observable} from 'rxjs';
 const {dialog} = electron.remote;
 import uuid from 'uuid/v4';
 
+
+
+interface AddFileStatus {
+    fileId: string,
+    path: string,
+    status: string,
+    tableName: string | undefined,
+    tableId: string | undefined,
+    processedSize: number | undefined,
+    totalSize: number | undefined
+}
+
 const requestFile = () => {
 
     return new Observable((subscriber) => {
@@ -15,6 +27,7 @@ const requestFile = () => {
                 filters: [{name: 'csv', extensions: ['csv']}],
                 properties: ['openFile', 'multiSelections']
             });
+
             if(openResult.canceled) {
                 subscriber.complete();
                 return;
@@ -26,10 +39,38 @@ const requestFile = () => {
                 path
             }));
 
+            const fileIds = files.map(file => file.id);
+
+            let status: AddFileStatus[] = files.map(file => ({
+                fileId: file.id,
+                path: file.path,
+                status: 'UNKNOWN',
+                tableName: undefined,
+                tableId: undefined,
+                totalSize: undefined,
+                processedSize: undefined
+            }));
+
+
             ipcRenderer.send('addFiles', {files});
 
-            ipcRenderer.on('addFilesProgress', (event, arg) => {
-                console.log(arg);
+            ipcRenderer.on('addFilesProgress', (event, addFileStatus: AddFileStatus) => {
+                if(fileIds.includes(addFileStatus.fileId)) {
+                    status = status.map((file) => {
+                        if(file.fileId !== addFileStatus.fileId) return file;
+                        return {
+                            fileId: file.fileId,
+                            path: file.path,
+                            status: addFileStatus.status,
+                            totalSize: addFileStatus.totalSize,
+                            processedSize: addFileStatus.processedSize,
+                            tableName: addFileStatus.tableName,
+                            tableId: addFileStatus.tableId
+                        }
+                    });
+
+                    subscriber.next({status})
+                }
             });
 
 

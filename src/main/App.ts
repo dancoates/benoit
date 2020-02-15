@@ -5,7 +5,9 @@ import uuid from 'uuid/v4';
 import csv from 'csv-parser';
 import highland from 'highland';
 import fs from 'fs';
-import countLines from './util/countLines';
+import util from 'util';
+
+const fsStat = util.promisify(fs.stat);
 
 const appDbTables = {
     tabs: 'CREATE TABLE tabs (id TEXT, name TEXT, active_view TEXT, query TEXT, variables TEXT)',
@@ -19,10 +21,13 @@ interface File {
 
 interface AddFileStatus {
     fileId: string,
-    rowsProcessed: number,
-    totalRows: number,
-    chunkSize: number,
-    chunkDuration: number
+    status: string,
+    processedSize: number,
+    tableName: string,
+    tableId: string,
+    totalSize: number,
+    chunkLength: number | null,
+    chunkDuration: number | null
 }
 
 interface CsvRow {
@@ -91,25 +96,19 @@ export default class App {
         const fileName = path.basename(file.path, '.csv');
         const suffix = incrementor ? `_${incrementor}` : '';
         const tableName = fileName.replace(/(\s+)|(-+)/g, '_').replace(/[^A-z0-9_-]/g, '') + suffix;
-        if(this.dataTables.includes(tableName)) {
+        if(this.dataTables.map(ii => ii.toLowerCase()).includes(tableName.toLowerCase())) {
             return this.getTableNameFromFile(file, (incrementor || 0) + 1);
         }
         return tableName;
     }
 
     // @TODO handle number columns
-    // @TODO handle max sql variables error
+    // @TODO handle two columns with same safe name
+    // @TODO error handling
     async addSingleFile(file: File, callback: AddFileCallback) {
-        const lineCount = await countLines(file.path);
-        let rowsProcessed = 0;
-
-        callback(null, {
-            fileId: file.id,
-            rowsProcessed,
-            totalRows: lineCount,
-            chunkDuration: 0,
-            chunkSize: 0
-        });
+        const maxVariables = 999;
+        let processedSize = 0;
+        let totalSize = await fsStat(file.path).then(stats => stats.size);
 
         let preparedStatement: {
             statement: Database.Statement,
@@ -117,24 +116,67 @@ export default class App {
         } | undefined;
         let tableCreated = false;
         let columns: {safeName: string, originalName: string}[] | undefined;
+        let insertChunkSize: number | undefined;
 
         const tableName = this.getTableNameFromFile(file);
         const tableId = uuid();
+        let chunk: CsvRow[] = [];
+        let start = Date.now();
+
+        const insertChunk = () => {
+            if(!columns) return;
+            if(!preparedStatement || preparedStatement.rowCount != chunk.length) {
+                preparedStatement = {
+                    statement: this.dataDbWriter.prepare(`
+                        INSERT INTO "${tableName}" (${columns.map(col => '"' + col.safeName + '"').join(', ')})
+                        VALUES ${new Array(chunk.length).fill(`(${new Array(columns.length).fill('?').join(', ')})`).join(', ')}
+                    `),
+                    rowCount: chunk.length
+                };
+            }
+
+            let values = [];
+            for (const row of chunk) {
+                for(const column of columns) {
+                    values.push(row[column.originalName]);
+                }
+            }
+
+            preparedStatement.statement.run(values);
+            const chunkSize = Buffer.byteLength(
+                chunk.map(ii => Object.values(ii).join(',')).join('\n'),
+                'utf8'
+            );
+
+            processedSize += chunkSize;
+
+            callback(null, {
+                fileId: file.id,
+                tableName,
+                tableId,
+                status: 'IMPORTING',
+                processedSize: Math.min(processedSize, totalSize),
+                chunkLength: chunk.length,
+                chunkDuration: Date.now() - start,
+                totalSize
+            });
+
+            chunk = [];
+            start = Date.now();
+        };
 
         highland<CsvRow>(
             fs.createReadStream(file.path)
                 .pipe(csv())
         )
-        .batch(50)
-        .each((rows: CsvRow[]) => {
-            const start = Date.now();
+        .each((row: CsvRow) => {
 
-            if(rows.length === 0) return;
-
-            columns = columns || Object.keys(rows[0]).map(column => ({
+            columns = columns || Object.keys(row).map(column => ({
                 safeName: column.replace(/(\s+)|(-+)/g, '_').replace(/[^A-z0-9_]/g, ''),
                 originalName: column
             }));
+
+            insertChunkSize = insertChunkSize || Math.floor(maxVariables / columns.length);
 
             // If the table hasn't already been created then do that first
             if(!tableCreated) {
@@ -147,44 +189,31 @@ export default class App {
 
                 // create the data table
                 this.dataDbWriter.prepare(
-                    `CREATE TABLE ${tableName} (${columns.map((col) => `${col.safeName} TEXT`).join(', ')})`
+                    `CREATE TABLE ${tableName} (${columns.map((col) => `"${col.safeName}" TEXT`).join(', ')})`
                 ).run();
 
                 tableCreated = true;
             }
 
-            // Set up prepared statement for fast insert
-            if(!preparedStatement || preparedStatement.rowCount != rows.length) {
-                preparedStatement = {
-                    statement: this.dataDbWriter.prepare(`
-                        INSERT INTO ${tableName} (${columns.map(col => col.safeName).join(', ')})
-                        VALUES ${new Array(rows.length).fill(`(${new Array(columns.length).fill('?').join(', ')})`).join(', ')}
-                    `),
-                    rowCount: rows.length
-                };
+            chunk.push(row);
+
+            if(chunk.length === insertChunkSize) {
+                insertChunk();
             }
-
-            let values = [];
-            for (const row of rows) {
-                for(const column of columns) {
-                    values.push(row[column.originalName]);
-                }
-            }
-
-            preparedStatement.statement.run(values);
-
-
-            rowsProcessed += rows.length;
+        })
+        .done(() => {
+            insertChunk();
 
             callback(null, {
                 fileId: file.id,
-                rowsProcessed,
-                chunkSize: rows.length,
-                chunkDuration: Date.now() - start,
-                totalRows: lineCount
+                tableName,
+                tableId,
+                processedSize: totalSize,
+                status: 'COMPLETE',
+                chunkLength: null,
+                chunkDuration: null,
+                totalSize
             });
-
-
         });
     }
 

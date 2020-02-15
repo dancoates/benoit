@@ -6,17 +6,16 @@ import Api from './data/Api';
 
 export default function() {
     const tabsMessage = Api.tabList.useRequest();
-    const addFile = Api.addFile.useRequest();
+    const addFileMessage = Api.addFile.useRequest();
 
     useAutoRequest(() => tabsMessage.onRequest());
 
 
     return <div>
-        <button onClick={() => addFile.onRequest()}>Add File</button>
+        <button onClick={() => addFileMessage.onRequest()}>Add File</button>
         {
             tabsMessage.requestState
                 .successMap(() => {
-                    console.log(tabsMessage.get('tabList'));
                     return <div>TABS</div>
                 })
                 .errorMap(() => {
@@ -25,5 +24,15 @@ export default function() {
                 .value()
         }
 
+        {
+            addFileMessage.requestState
+                .successMap(() => {
+                    const progress = addFileMessage.get('status');
+
+                    console.log('PROGRESS', progress);
+                })
+                .value()
+
+        }
     </div>;
 }
