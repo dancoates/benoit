@@ -8,6 +8,6 @@ import QueryView from './QueryView';
 export default composeWith(
     Api.ProviderHoc(),
     () => {
-        return <QueryView/>
+        return <QueryView/>;
     }
 );
