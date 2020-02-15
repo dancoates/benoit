@@ -92,6 +92,16 @@ export default class App {
         }));
     }
 
+    tableList() {
+        const tables = this.appDb.prepare('SELECT id, table_name, file_name from data_tables').all();
+
+        return tables.map(table => ({
+            id: table.id,
+            name: table.table_name,
+            fileName: table.file_name
+        }));
+    }
+
     getTableNameFromFile(file: File, incrementor?: number): string {
         const fileName = path.basename(file.path, '.csv');
         const suffix = incrementor ? `_${incrementor}` : '';

@@ -83,9 +83,10 @@ const requestFile = () => {
 
 const api = EntityApi({
     addFile: () => requestFile(),
-    tabList: async (payload: any) => ({tabList: await ipcRenderer.invoke('tabList')}),
-    dataTableList: async (payload: any) => console.log('dataTableList', payload)
-
+    appState: async (payload: any) => ({
+        dataTableList: await ipcRenderer.invoke('tableList'),
+        tabList: await ipcRenderer.invoke('tabList')
+    })
 }, Schema);
 
 

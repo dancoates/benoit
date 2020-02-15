@@ -20,7 +20,7 @@ const TabBar = styled.div`
     background: #333;
     display: flex;
     font-size: 12px;
-    border-bottom: 1px solid #333;
+
 `;
 
 interface TabProps {
@@ -30,7 +30,8 @@ interface TabProps {
 const Tab = styled.div<TabProps>`
     flex: 1;
     padding: 10px 15px;
-    border-left: 2px solid black;
+    border-right: 2px solid black;
+    border-bottom: 1px solid #333;
     &:hover {
         cursor: pointer;
         background: #444;
@@ -38,13 +39,31 @@ const Tab = styled.div<TabProps>`
 
     ${props => props.active && `
         background: black;
+        border-bottom: 1px solid black;
         &:hover {
             background: black;
         }
     `}
 `;
 
-// @todo move state handling to parent
+const NewTab = styled.button`
+    width: 50px;
+    height: 100%;
+    outline: none;
+    display: block;
+    border: none;
+    border-radius: 0;
+    font-size: 12px;
+    padding: 10px;
+    background: black;
+    color: white;
+    border-left: 1px solid #333;
+    &:hover {
+        background: #222;
+        cursor: pointer;
+    }
+`;
+
 const Tabs: FunctionComponent<Props> = (props) => {
     const {tabList, onSelectTab, activeTab} = props;
 
@@ -58,6 +77,7 @@ const Tabs: FunctionComponent<Props> = (props) => {
                 {tab.name}
             </Tab>;
         })}
+        <NewTab>+</NewTab>
     </TabBar>;
 };
 

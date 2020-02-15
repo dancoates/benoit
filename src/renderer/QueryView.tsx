@@ -8,13 +8,14 @@ import VerticalSplit from './components/VerticalSplit';
 import HorizontalSplit from './components/HorizontalSplit';
 import Loader from './components/Loader';
 import Tabs from './layout/Tabs';
+import Sidebar from './layout/Sidebar';
 import styled from 'styled-components';
 
 export default function() {
-    const tabsMessage = Api.tabList.useRequest();
-    // const addFileMessage = Api.addFile.useRequest();
+    const appStateMessage = Api.appState.useRequest();
+    const addFileMessage = Api.addFile.useRequest();
 
-    useAutoRequest(() => tabsMessage.onRequest());
+    useAutoRequest(() => appStateMessage.onRequest());
 
     const [activeTabId, setActiveTab] = useState<string | null>(null);
 
@@ -26,14 +27,24 @@ export default function() {
         height: 100%;
     `;
 
+    // @TODO not sure why this works?
+    const handleNewFile = async () => {
+        await addFileMessage.onRequest();
+        console.log('request app state update');
+        await appStateMessage.onRequest();
+    };
+
     return <Loader
-        message={tabsMessage}
+        message={appStateMessage}
     >{(data) => {
+        const tabId = activeTabId || data.tabList[0].id;
+        const activeTab = data.tabList.find(tab => tab.id === tabId);
+        const tableList = data.dataTableList;
 
         return <Page>
             <Tabs
                 tabList={data.tabList}
-                activeTab={activeTabId || data.tabList[0].id}
+                activeTab={tabId}
                 onSelectTab={(id) => setActiveTab(id)}
             />
             <VerticalSplit
@@ -41,7 +52,11 @@ export default function() {
                 maxSize={300}
                 defaultSize={100}
             >
-                <div>Item 1</div>
+                <Sidebar
+                    tableList={tableList}
+                    activeView={activeTab.activeView}
+                    onAddNewFile={() => handleNewFile()}
+                />
                 <HorizontalSplit>
                     <div>Item 2</div>
                     <div>Item 3</div>

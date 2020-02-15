@@ -48,6 +48,13 @@ const bindEvents = (app: App) => {
         return app.tabList();
     });
 
+
+    ipcMain.handle('tableList', (event) => {
+        return app.tableList();
+    });
+
+
+
     ipcMain.on('addFiles', (event, arg) => {
         const {files} = arg;
         app.addFiles(files, (err, status) => {

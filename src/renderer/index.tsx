@@ -12,6 +12,10 @@ const GlobalStyle = createGlobalStyle`
         font-family: Menlo, Monaco, monospaced;
         color: white;
     }
+
+    * {
+        box-sizing: border-box;
+    }
 `;
 
 console.log(React.version, ReactDom.version);
