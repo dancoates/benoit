@@ -8,7 +8,7 @@ import VerticalSplit from './components/VerticalSplit';
 import HorizontalSplit from './components/HorizontalSplit';
 import Loader from './components/Loader';
 import Tabs from './layout/Tabs';
-
+import styled from 'styled-components';
 
 export default function() {
     const tabsMessage = Api.tabList.useRequest();
@@ -18,11 +18,19 @@ export default function() {
 
     const [activeTabId, setActiveTab] = useState<string | null>(null);
 
+    const Page = styled.div`
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    `;
+
     return <Loader
         message={tabsMessage}
     >{(data) => {
 
-        return <div>
+        return <Page>
             <Tabs
                 tabList={data.tabList}
                 activeTab={activeTabId || data.tabList[0].id}
@@ -33,14 +41,14 @@ export default function() {
                 maxSize={300}
                 defaultSize={100}
             >
-                <div>Item 1f</div>
+                <div>Item 1</div>
                 <HorizontalSplit>
                     <div>Item 2</div>
                     <div>Item 3</div>
                 </HorizontalSplit>
 
             </VerticalSplit>
-        </div>;
+        </Page>;
     }}</Loader>;
 
 

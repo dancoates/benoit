@@ -8,7 +8,9 @@ const GlobalStyle = createGlobalStyle`
     body, html {
         margin: 0;
         padding: 0;
-        background: white;
+        background: black;
+        font-family: Menlo, Monaco, monospaced;
+        color: white;
     }
 `;
 

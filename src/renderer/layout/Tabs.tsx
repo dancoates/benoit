@@ -17,9 +17,10 @@ type Props = {
 
 const TabBar = styled.div`
     width: 100%;
-    height: 30px;
-    background: grey;
+    background: #333;
     display: flex;
+    font-size: 12px;
+    border-bottom: 1px solid #333;
 `;
 
 interface TabProps {
@@ -28,8 +29,19 @@ interface TabProps {
 
 const Tab = styled.div<TabProps>`
     flex: 1;
-    padding: 5px;
-    ${props => props.active && `background: #333`}
+    padding: 10px 15px;
+    border-left: 2px solid black;
+    &:hover {
+        cursor: pointer;
+        background: #444;
+    }
+
+    ${props => props.active && `
+        background: black;
+        &:hover {
+            background: black;
+        }
+    `}
 `;
 
 // @todo move state handling to parent
@@ -47,8 +59,6 @@ const Tabs: FunctionComponent<Props> = (props) => {
             </Tab>;
         })}
     </TabBar>;
-
-
 };
 
 export default Tabs;

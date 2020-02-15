@@ -12,8 +12,8 @@ const HorizontalSplit: FunctionComponent<Props> = (props) => {
         {...props}
         split="vertical"
         resizerStyle={{
-            background: '#000',
-            opacity: 0.2,
+            background: '#333',
+            opacity: 1,
             zIndex: 1,
             boxSizing: 'border-box',
             backgroundClip: 'padding-box',
