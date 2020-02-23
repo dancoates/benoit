@@ -15,6 +15,9 @@
     "node": ">=12"
   },
   "electronWebpack": {
+    "renderer": {
+      "webpackConfig": "webpack.renderer.additions.js"
+    },
     "whiteListedModules": [
       "react-enty",
       "styled-components"
@@ -26,12 +29,16 @@
     "dataparcels": "^1.0.2",
     "debounce": "^1.2.0",
     "highland": "^2.13.5",
+    "monaco-editor": "^0.20.0",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
     "react-enty": "^1.0.0-alpha.8",
+    "react-is": "^16.12.0",
+    "react-monaco-editor": "^0.34.0",
     "react-split-pane": "^0.1.89",
     "react-table": "^7.0.0-rc.15",
     "react-window": "^1.8.5",
+    "react-window-infinite-loader": "^1.0.5",
     "rxjs": "^6.5.4",
     "source-map-support": "^0.5.12",
     "styled-components": "^5.0.1",
@@ -52,6 +59,7 @@
     "electron-builder": "^22.3.2",
     "electron-webpack": "^2.7.4",
     "electron-webpack-ts": "^3.2.0",
+    "monaco-editor-webpack-plugin": "^1.9.0",
     "tslint": "^6.0.0",
     "typescript": "^3.7.5",
     "webpack": "~4.41.5"

@@ -87,6 +87,9 @@ const requestFile = () => {
 
 
 const api = EntityApi({
+    runQuery: ({queryString, queryVariables}) => {
+        return ipcRenderer.invoke();
+    },
     addFile: () => requestFile(),
     updateActiveView: async ({tableId, tabId}) => {
         await ipcRenderer.invoke('updateActiveView', {tableId, tabId});
