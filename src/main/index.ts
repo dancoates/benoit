@@ -45,21 +45,23 @@ const createWindow = () => {
 
 const bindEvents = (app: App) => {
     ipcMain.handle('tabList', (event) => {
-        console.log('request tab list');
         return app.tabList();
     });
 
 
     ipcMain.handle('tableList', (event) => {
-        console.log('tableList');
         return app.tableList();
     });
 
+    ipcMain.handle('updateActiveView', async (event, arg) => {
+        await app.updateActiveView(arg);
+    });
 
 
     ipcMain.on('addFiles', (event, arg) => {
         const {files} = arg;
         app.addFiles(files, (err, status) => {
+            console.log('file progress');
             event.reply('addFilesProgress', status);
         });
     });

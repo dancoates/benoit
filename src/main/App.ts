@@ -86,7 +86,7 @@ export default class App {
         return tabs.map(tab => ({
             id: tab.id,
             name: tab.name,
-            activeView: tab.activeView,
+            activeView: tab.active_view,
             query: tab.query,
             variables: tab.variables
         }));
@@ -112,12 +112,18 @@ export default class App {
         return tableName;
     }
 
+    async updateActiveView({tableId, tabId}) {
+        this.appDb.prepare('UPDATE TABS SET active_view = ? WHERE id = ?').run(tableId, tabId);
+    }
+
     // @TODO handle number columns
     // @TODO handle two columns with same safe name
     // @TODO error handling
     async addSingleFile(file: File, callback: AddFileCallback) {
         const maxVariables = 999;
+        const callbackThrottle = 350;
         let processedSize = 0;
+        let lastCallbackTime = 0;
         let totalSize = await fsStat(file.path).then(stats => stats.size);
 
         let preparedStatement: {
@@ -134,6 +140,7 @@ export default class App {
         let start = Date.now();
 
         const insertChunk = () => {
+
             if(!columns) return;
             if(!preparedStatement || preparedStatement.rowCount != chunk.length) {
                 preparedStatement = {
@@ -159,20 +166,24 @@ export default class App {
             );
 
             processedSize += chunkSize;
+            const now = Date.now();
 
-            callback(null, {
-                fileId: file.id,
-                tableName,
-                tableId,
-                status: 'IMPORTING',
-                processedSize: Math.min(processedSize, totalSize),
-                chunkLength: chunk.length,
-                chunkDuration: Date.now() - start,
-                totalSize
-            });
+            if(now - lastCallbackTime > callbackThrottle) {
+                lastCallbackTime = now;
+                callback(null, {
+                    fileId: file.id,
+                    tableName,
+                    tableId,
+                    status: 'IMPORTING',
+                    processedSize: Math.min(processedSize, totalSize),
+                    chunkLength: chunk.length,
+                    chunkDuration: now - start,
+                    totalSize
+                });
+            }
 
             chunk = [];
-            start = Date.now();
+            start = now;
         };
 
         highland<CsvRow>(

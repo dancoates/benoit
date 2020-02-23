@@ -1,7 +1,6 @@
 
 import React from 'react';
 import {useState} from 'react';
-// @ts-ignore
 import {useAutoRequest} from 'react-enty';
 import Api from './data/Api';
 import VerticalSplit from './components/VerticalSplit';
@@ -9,6 +8,8 @@ import HorizontalSplit from './components/HorizontalSplit';
 import Loader from './components/Loader';
 import Tabs from './layout/Tabs';
 import Sidebar from './layout/Sidebar';
+import QueryEditor from './layout/QueryEditor';
+import ResultTable from './layout/ResultTable';
 import styled from 'styled-components';
 import pipeWith from 'unmutable/pipeWith';
 import sortBy from 'unmutable/sortBy';
@@ -20,7 +21,7 @@ import pipe from 'unmutable/pipe';
 export default function() {
     const appStateMessage = Api.appState.useRequest();
     const addFileMessage = Api.addFile.useRequest();
-    // const updateActiveViewMessage = Api.updateActiveView.useRequest();
+    const updateActiveViewMessage = Api.updateActiveView.useRequest();
 
     useAutoRequest(() => appStateMessage.onRequest({foo: 'asddfasdfsadsasdfas'}));
 
@@ -34,19 +35,18 @@ export default function() {
         height: 100%;
     `;
 
-    // @TODO add new files to file list, ensure that there's enough data to include them
     const handleNewFile = () => {
-        addFileMessage.onRequest({foo: 'adfsadfsadfsafadfs'});
+        addFileMessage.onRequest();
     };
 
-    // @TODO work out how to update app state when active view changes?
     const updateActiveView = async (tableId, tabId) => {
-        // await updateActiveViewMessage.onRequest({tableId, tabId});
+        updateActiveViewMessage.onRequest({tableId, tabId});
     };
 
 
     return <Loader
         message={appStateMessage}
+        // @ts-ignore
     >{(data) => {
         console.log(data);
         const tabId = activeTabId || data.tabList[0].id;
@@ -58,8 +58,6 @@ export default function() {
             .fetchingMap(() => [])
             .successMap(() => {
                 const status = addFileMessage.get('status');
-
-                console.log('STATUS', status);
 
                 return status.map((ii) => ({
                     id: ii.fileId,
@@ -99,38 +97,15 @@ export default function() {
                     onSelectTable={(tableId) => updateActiveView(tableId, tabId)}
                 />
                 <HorizontalSplit>
-                    <div>Item 2</div>
-                    <div>Item 3</div>
+                    {activeTab.activeView === 'SQL_QUERY' && <QueryEditor/>}
+                    <ResultTable
+                        activeTab={activeTab}
+                        tableList={tableList}
+                    />
                 </HorizontalSplit>
 
             </VerticalSplit>
         </Page>;
     }}</Loader>;
 
-
-    // return <div>
-    //     <button onClick={() => addFileMessage.onRequest()}>Add File</button>
-    //     {
-    //         tabsMessage.requestState
-    //             .successMap(() => {
-    //                 console.log(tabsMessage.get('tabList'))
-    //                 return <div>TABS</div>
-    //             })
-    //             .errorMap(() => {
-    //                 return <div>Error getting tabs</div>
-    //             })
-    //             .value()
-    //     }
-
-    //     {
-    //         addFileMessage.requestState
-    //             .successMap(() => {
-    //                 const progress = addFileMessage.get('status');
-
-    //                 console.log('PROGRESS', progress);
-    //             })
-    //             .value()
-
-    //     }
-    // </div>;
 }

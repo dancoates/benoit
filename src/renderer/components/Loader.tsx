@@ -1,4 +1,5 @@
 import React, {FunctionComponent} from 'react';
+// @ts-ignore
 import {LoadingBoundary} from 'react-enty';
 
 type Props = {

@@ -41,7 +41,7 @@ const AddFile = styled.button`
     }
 `;
 
-const TableItem = styled.div<{status: string, progress: number}>`
+const TableItem = styled.div<{status: string, progress: number, isActive: boolean}>`
     padding: 10px 15px;
     width: 100%;
     overflow: hidden;
@@ -49,33 +49,48 @@ const TableItem = styled.div<{status: string, progress: number}>`
     font-size: 12px;
     border-bottom: 2px solid #222;
     position: relative;
+    ${props => props.isActive && 'background: #222;'}
     &:hover {
         cursor: pointer;
         background: #222;
     }
 
     &:before {
-        content: " ",
+        content: " ";
         position: absolute;
         top: 0;
         left: 0;
         height: 100%;
         ${props => props.status === 'IMPORTING' && `width: ${props.progress}%;`}
         background: blue;
+        z-index: 1;
+    }
+
+    span {
+        position: relative;
+        z-index: 2;
     }
 `;
 
 
 const Sidebar: FunctionComponent<Props> = (props) => {
-    // const addFileMessage = Api.addFile.useRequest();
-
     return <SidebarWrapper>
         <AddFile onClick={() => props.onAddNewFile()}>Add File</AddFile>
+        <TableItem
+            key={'SQL_QUERY'}
+            isActive={props.activeView === 'SQL_QUERY'}
+            onClick={() => props.onSelectTable('SQL_QUERY')}
+            status={'COMPLETE'}
+            progress={100}
+        >
+            <span>SQL Query</span>
+        </TableItem>
         {
             props.tableList.map(table => {
                 return <TableItem
                     key={table.id}
-                    onClick={() => this.onSelectTable(table.id)}
+                    isActive={props.activeView === table.id}
+                    onClick={() => props.onSelectTable(table.id)}
                     status={table.status}
                     progress={table.progress}
                 >
