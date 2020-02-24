@@ -1,32 +1,20 @@
 import React, {FunctionComponent} from 'react';
-import SplitPane from 'react-split-pane';
+import SplitterLayout from 'react-splitter-layout';
 
 interface Props {
-    minSize?: number,
-    maxSize?: number,
-    defaultSize?: number
+    primaryMinSize?: number,
+    secondaryMinSize?: number,
+    secondaryInitialSize?: number
 }
 
 const HorizontalSplit: FunctionComponent<Props> = (props) => {
-    return <SplitPane
+    return <SplitterLayout
         {...props}
-        split="horizontal"
-        resizerStyle={{
-            background: '#333',
-            opacity: 1,
-            zIndex: 1,
-            boxSizing: 'border-box',
-            backgroundClip: 'padding-box',
-            height: '11px',
-            margin: '-5px 0',
-            borderTop: '5px solid rgba(255, 255, 255, 0)',
-            borderBottom: '5px solid rgba(255, 255, 255, 0)',
-            cursor: 'row-resize',
-            width: '100%'
-        }}
+        vertical={true}
+        percentage={true}
     >
         {props.children}
-    </SplitPane>;
+    </SplitterLayout>;
 }
 
 export default HorizontalSplit;

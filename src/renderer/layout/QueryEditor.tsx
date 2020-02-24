@@ -19,7 +19,7 @@ const QueryEditor: FunctionComponent<Props> = (props) => {
     const options = {
         selectOnLineNumbers: true
     };
-
+    // @TODO add resizing
     return <EditorWrapper>
         <MonacoEditor
             language={'sql'}

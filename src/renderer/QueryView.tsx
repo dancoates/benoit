@@ -18,6 +18,22 @@ import map from 'unmutable/map';
 import concat from 'unmutable/concat';
 import pipe from 'unmutable/pipe';
 
+const Page = styled.div`
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+`;
+
+const Content = styled.div`
+    position: absolute;
+    top: 35px;
+    left: 0;
+    bottom: 0;
+    right: 0;
+`;
+
 export default function() {
     const appStateMessage = Api.appState.useRequest();
     const addFileMessage = Api.addFile.useRequest();
@@ -27,13 +43,7 @@ export default function() {
 
     const [activeTabId, setActiveTab] = useState<string | null>(null);
 
-    const Page = styled.div`
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-    `;
+
 
     const handleNewFile = () => {
         addFileMessage.onRequest();
@@ -85,26 +95,26 @@ export default function() {
                 activeTab={tabId}
                 onSelectTab={(id) => setActiveTab(id)}
             />
-            <VerticalSplit
-                minSize={200}
-                maxSize={300}
-                defaultSize={200}
-            >
-                <Sidebar
-                    tableList={mergedTables}
-                    activeView={activeTab.activeView}
-                    onAddNewFile={() => handleNewFile()}
-                    onSelectTable={(tableId) => updateActiveView(tableId, tabId)}
-                />
-                <HorizontalSplit>
-                    {activeTab.activeView === 'SQL_QUERY' && <QueryEditor runQuery={() => {}}/>}
-                    <ResultTable
-                        activeTab={activeTab}
-                        tableList={tableList}
-                    />
-                </HorizontalSplit>
+            <Content>
 
-            </VerticalSplit>
+                <VerticalSplit>
+                    <Sidebar
+                        tableList={mergedTables}
+                        activeView={activeTab.activeView}
+                        onAddNewFile={() => handleNewFile()}
+                        onSelectTable={(tableId) => updateActiveView(tableId, tabId)}
+                    />
+                    <HorizontalSplit>
+                        {activeTab.activeView === 'SQL_QUERY' && <QueryEditor runQuery={() => {}}/>}
+                        <ResultTable
+                            activeTab={activeTab}
+                            tableList={tableList}
+                        />
+                    </HorizontalSplit>
+
+                </VerticalSplit>
+
+            </Content>
         </Page>;
     }}</Loader>;
 
