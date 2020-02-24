@@ -4,7 +4,7 @@ import MonacoEditor from 'react-monaco-editor';
 import {useState} from 'react';
 
 interface Props {
-
+    runQuery: (query: string) => void
 };
 
 const EditorWrapper = styled.div`
@@ -16,15 +16,20 @@ const EditorWrapper = styled.div`
 
 const QueryEditor: FunctionComponent<Props> = (props) => {
     const [value, updateValue] = useState('');
-
+    const options = {
+        selectOnLineNumbers: true
+    };
 
     return <EditorWrapper>
         <MonacoEditor
             language={'sql'}
             value={value}
+            theme="vs-dark"
+            options={options}
             onChange={(newValue) => updateValue(newValue)}
         >
         </MonacoEditor>
+        <button onClick={() => props.runQuery(value)}>RUN</button>
     </EditorWrapper>;
 };
 

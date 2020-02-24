@@ -20,7 +20,8 @@
     },
     "whiteListedModules": [
       "react-enty",
-      "styled-components"
+      "styled-components",
+      "react-monaco-editor"
     ]
   },
   "dependencies": {

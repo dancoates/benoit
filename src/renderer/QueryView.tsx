@@ -43,6 +43,21 @@ export default function() {
         updateActiveViewMessage.onRequest({tableId, tabId});
     };
 
+    const loadingTables = addFileMessage.requestState
+        .emptyMap(() => [])
+        .fetchingMap(() => [])
+        .successMap(() => {
+            const status = addFileMessage.get('status');
+
+            return status.map((ii) => ({
+                id: ii.fileId,
+                name: ii.tableName,
+                fileName: ii.path,
+                status: ii.status,
+                progress: (ii.processedSize / ii.totalSize) * 100
+            }));
+        }).value();
+
 
     return <Loader
         message={appStateMessage}
@@ -52,21 +67,6 @@ export default function() {
         const tabId = activeTabId || data.tabList[0].id;
         const activeTab = data.tabList.find(tab => tab.id === tabId);
         const tableList = data.dataTableList;
-
-        const loadingTables = addFileMessage.requestState
-            .emptyMap(() => [])
-            .fetchingMap(() => [])
-            .successMap(() => {
-                const status = addFileMessage.get('status');
-
-                return status.map((ii) => ({
-                    id: ii.fileId,
-                    name: ii.tableName,
-                    fileName: ii.path,
-                    status: ii.status,
-                    progress: (ii.processedSize / ii.totalSize) * 100
-                }));
-            }).value();
 
         const mergedTables = pipeWith(
             tableList,
@@ -97,7 +97,7 @@ export default function() {
                     onSelectTable={(tableId) => updateActiveView(tableId, tabId)}
                 />
                 <HorizontalSplit>
-                    {activeTab.activeView === 'SQL_QUERY' && <QueryEditor/>}
+                    {activeTab.activeView === 'SQL_QUERY' && <QueryEditor runQuery={() => {}}/>}
                     <ResultTable
                         activeTab={activeTab}
                         tableList={tableList}
